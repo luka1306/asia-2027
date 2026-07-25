@@ -105,6 +105,18 @@
 
   /* ===== HERO ===== */
   .hero{padding:88px 0 56px}
+  @media (max-width:720px){
+    .hero{padding:44px 0 36px}
+    .wrap{padding:0 20px}
+    h1{max-width:none}
+    .hero .sub{margin-top:16px}
+    .eyebrow{margin-bottom:14px;font-size:11px;letter-spacing:.18em}
+    .besthis{margin-top:22px}
+  }
+  @media (max-width:420px){
+    .wrap{padding:0 17px}
+    .hero{padding:36px 0 30px}
+  }
   .eyebrow{font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--green);margin-bottom:20px}
   h1{font-family:var(--disp);font-weight:800;letter-spacing:-.02em;line-height:1.02;font-size:clamp(2.7rem,7.5vw,5.4rem);max-width:15ch}
   h1 em{font-style:italic;font-weight:500;color:var(--green)}
@@ -1941,6 +1953,10 @@
 
 <script>
 const REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const STORE={
+  get(k){try{return localStorage.getItem(k);}catch(e){return null;}},
+  set(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+};
 const MF_EN=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MA_EN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const LOCALE={
@@ -2405,7 +2421,7 @@ try{
   const gd=JSON.parse(document.getElementById('globe-data').textContent);
   const canvas=document.getElementById('globe');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, window.innerWidth<900?1.4:1.75));
   const scene=new THREE.Scene();
   const camera=new THREE.PerspectiveCamera(38,1,.1,10);
   camera.position.z=3.05;
@@ -2584,9 +2600,15 @@ try{
   });
   canvas.addEventListener('pointerleave',()=>{tip.style.display='none';});
 
-  // animate
+  // animate — skips work entirely while the globe is scrolled out of view
+  let globeVisible=true;
+  try{
+    new IntersectionObserver(es=>es.forEach(en=>{globeVisible=en.isIntersecting;}),
+      {rootMargin:'120px'}).observe(canvas);
+  }catch(e){}
   (function loop(){
     requestAnimationFrame(loop);
+    if(!globeVisible) return;
     frame++;
     arcAnims.forEach(a=>{
       if(frame>a.delay&&a.shown<a.N+1){a.shown+=.9;a.geo.setDrawRange(0,Math.floor(a.shown));}
@@ -2663,8 +2685,14 @@ const rootEl=document.documentElement;
 if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches) rootEl.dataset.theme='dark';
 document.getElementById('themebtn').addEventListener('click',()=>{
   rootEl.dataset.theme = rootEl.dataset.theme==='dark' ? 'light' : 'dark';
+  STORE.set('tf-theme',rootEl.dataset.theme);
   if(setGlobeTheme) setGlobeTheme();
 });
+(()=>{
+  const saved=STORE.get('tf-theme');
+  if(saved==='dark'||saved==='light') rootEl.dataset.theme=saved;
+  else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches) rootEl.dataset.theme='dark';
+})();
 if(setGlobeTheme) setGlobeTheme();
 
 /* back to top */
@@ -2724,6 +2752,20 @@ totop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
 })();
 
 collectNodes();
+/* remember the visitor's choices; fall back to their browser language */
+(()=>{
+  const supported=Object.keys(LOCALE);
+  let want=STORE.get('tf-lang');
+  if(!want||!supported.includes(want)){
+    want=null;
+    const navs=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||'en'];
+    for(const n of navs){
+      const base=String(n).toLowerCase().split('-')[0];
+      if(supported.includes(base)){want=base;break;}
+    }
+  }
+  if(want&&want!==lang) lang=want;
+})();
 (()=>{
   const wrap=document.getElementById('langpick');
   const btn=document.getElementById('langbtn');
@@ -2738,12 +2780,12 @@ collectNodes();
     const b=e.target.closest('.lang-item'); if(!b) return;
     close();
     if(b.dataset.l===lang) return;
-    lang=b.dataset.l; applyLang();
+    lang=b.dataset.l; STORE.set('tf-lang',lang); applyLang();
   });
   document.addEventListener('click',ev=>{ if(!wrap.contains(ev.target)) close(); });
   document.addEventListener('keydown',ev=>{ if(ev.key==='Escape') close(); });
 })();
-render();
+applyLang();
 </script>
 </body>
 </html>
