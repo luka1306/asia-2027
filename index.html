@@ -53,12 +53,28 @@
 
   /* ===== BAR ===== */
   .bar{position:sticky;top:0;z-index:80;background:var(--bar-bg);backdrop-filter:blur(16px);border-bottom:1px solid var(--hair)}
-  @media (max-width:520px){
-    .bar-in{flex-wrap:wrap;row-gap:8px}
-    .theme-btn{width:38px;height:38px}
-    .lang-btn{padding:7px 10px}
+  .bar-in{max-width:1120px;margin:0 auto;padding:9px 24px;display:flex;align-items:center;
+    gap:14px;justify-content:space-between;flex-wrap:nowrap}
+  .bar-tools{display:flex;align-items:center;gap:9px;flex:none;margin-left:auto}
+  .bar{transition:box-shadow .25s ease,border-color .25s ease}
+  .bar.scrolled{box-shadow:0 1px 0 var(--hair),0 6px 22px rgba(0,0,0,.06)}
+  html[data-theme="dark"] .bar.scrolled{box-shadow:0 1px 0 var(--hair),0 6px 26px rgba(0,0,0,.5)}
+  .theme-btn{width:36px;height:36px;font-size:14px}
+  .lang-btn{padding:8px 11px}
+  @media (max-width:640px){
+    .bar-in{padding:8px 16px;gap:8px}
+    .bar-tools{gap:6px}
+    .theme-btn{width:34px;height:34px;font-size:13px}
+    .lang-btn{padding:7px 9px;font-size:10.5px}
+    button.brand{font-size:14px}
+    .starchip{padding:6px 10px}
+    #starword{display:none}
+    .fchip{padding:5px 6px 5px 11px;font-size:11px}
   }
-  .bar-in{max-width:1120px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap}
+  @media (max-width:420px){
+    .bar-in{padding:7px 13px}
+    .lang-btn svg{display:none}
+  }
   /* CJK: Fraunces/Inter have no CJK glyphs, so swap in Noto for those languages */
   html[lang="ja"],html[lang="zh"],html[lang="ko"]{
     --disp:var(--cjk-disp); --body:var(--cjk-body);
@@ -967,7 +983,7 @@ html[data-theme="dark"]{
       </div>
     </div>
     <div class="seg" id="monthbar"><button class="mb" data-m="1">Jan</button><button class="mb" data-m="2">Feb</button><button class="mb" data-m="3">Mar</button><button class="mb wb" data-m="4">Apr</button><button class="mb wb" data-m="5">May</button><button class="mb" data-m="6">Jun</button><button class="mb" data-m="7">Jul</button><button class="mb" data-m="8">Aug</button><button class="mb" data-m="9">Sep</button><button class="mb" data-m="10">Oct</button><button class="mb" data-m="11">Nov</button><button class="mb" data-m="12">Dec</button></div>
-    <button class="starchip" id="starchip" aria-label="Jump to shortlist"><span class="s">★</span><b id="starnum">0</b><span id="starword">shortlisted</span></button>
+    <div class="bar-tools"><button class="starchip" id="starchip" aria-label="Jump to shortlist"><span class="s">★</span><b id="starnum">0</b><span id="starword">shortlisted</span></button>
     <span class="fchip" id="fchip"><span id="fchip-t"></span><button id="fchip-x" aria-label="Show all trips">✕</button></span>
     <div class="langpick" id="langpick">
       <button class="lang-btn" id="langbtn" aria-haspopup="true" aria-expanded="false" aria-label="Language">
@@ -977,7 +993,7 @@ html[data-theme="dark"]{
       <div class="lang-menu" id="langmenu" role="menu"><button class="lang-item" data-l="en"><b>English</b><span>EN</span></button><button class="lang-item" data-l="de"><b>Deutsch</b><span>DE</span></button><button class="lang-item" data-l="nl"><b>Nederlands</b><span>NL</span></button><button class="lang-item" data-l="fr"><b>Français</b><span>FR</span></button><button class="lang-item" data-l="es"><b>Español</b><span>ES</span></button><button class="lang-item" data-l="id"><b>Bahasa Indonesia</b><span>ID</span></button><button class="lang-item" data-l="ja"><b>日本語</b><span>JA</span></button><button class="lang-item" data-l="zh"><b>简体中文</b><span>ZH</span></button><button class="lang-item" data-l="ko"><b>한국어</b><span>KO</span></button><button class="lang-item" data-l="ar"><b>العربية</b><span>AR</span></button></div>
     </div>
     <button class="theme-btn" id="playbtn" aria-label="Play as presentation">▶</button>
-    <button class="theme-btn" id="themebtn" aria-label="Toggle dark mode">◐</button>
+    <button class="theme-btn" id="themebtn" aria-label="Toggle dark mode">◐</button></div>
   </div>
 </div>
 
@@ -3308,7 +3324,9 @@ document.addEventListener('pointerdown',e=>{
 
 /* back to top */
 const totop=document.getElementById('totop');
+const barEl=document.querySelector('.bar');
 function syncChrome(){
+  if(barEl) barEl.classList.toggle('scrolled', window.scrollY>8);
   totop.classList.toggle('show',window.scrollY>600);
   if(rail){
     const first=entries.find(sec=>sec.style.display!=='none');
