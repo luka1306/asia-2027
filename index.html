@@ -914,6 +914,97 @@ html[data-theme="dark"]{
 @media (prefers-reduced-motion:reduce){
   .star,.sl-close,.m-close{transition:none}
 }
+
+/* ============================================================
+   MOBILE PASS — one consistent gutter, real touch targets,
+   appended last so it wins over the scattered earlier rules
+   ============================================================ */
+@media (max-width:900px){
+  :root{--gutter:20px}
+
+  /* one gutter everywhere instead of five different values */
+  .wrap,.grid,.ghead-in,.cmp-in,.bar-in,.sl-panel{padding-left:var(--gutter);padding-right:var(--gutter)}
+  .grid{grid-template-columns:1fr;gap:26px}
+  .map-side{position:static;top:auto}
+  .entry{padding:44px 0}
+  .hero{padding:30px 0 26px}
+
+  /* headings breathe rather than fill the screen edge to edge */
+  h1{font-size:clamp(2.1rem,9vw,3rem);line-height:1.04}
+  .name{font-size:clamp(2.2rem,10.5vw,3.2rem)}
+  .lead,.g-sub,.cmp-sub{max-width:none;font-size:1rem;line-height:1.7}
+  .tagline{font-size:1.15rem;padding-bottom:14px}
+
+  /* the map card: less inner padding, taller map, bigger dots to tap */
+  .map-card{padding:34px 18px 20px}
+  .map{max-height:none}
+  .rt-stop{r:3.6;stroke-width:1.2;opacity:.55}
+  .rt-stop:hover,.rt-stop.hot{r:5.4;stroke-width:1.8}
+  .map-tip{font-size:12.5px;padding:6px 12px}
+
+  /* destination cards: single column, full-width tap area */
+  .places{grid-template-columns:1fr;gap:8px}
+  .place{padding:14px 15px;min-height:56px}
+
+  /* month strip scrolls instead of squeezing 12 buttons into 320px */
+  .seg{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;flex-wrap:nowrap;justify-content:flex-start;
+    scroll-snap-type:x proximity;padding-bottom:2px}
+  .seg::-webkit-scrollbar{display:none}
+  .mb{flex:none;scroll-snap-align:center;padding:10px 14px;font-size:13px;min-height:40px}
+
+  /* season strip cells stay legible */
+  .lm{min-width:0}
+  .lm span{font-size:10px}
+
+  /* the best-in card stacks */
+  .besthis{flex-direction:column;align-items:flex-start;gap:12px;padding:16px 18px}
+  .bh-v a{padding:9px 14px;font-size:13px}
+
+  /* comparison table: keep the horizontal scroll obvious */
+  .cmp-wrap{margin-inline:calc(var(--gutter)*-1);border-radius:0;border-left:none;border-right:none}
+  table.cmp th,table.cmp td{padding:12px 14px}
+  table.cmp th:first-child,table.cmp td:first-child{position:sticky;left:0;background:var(--card);z-index:1}
+
+  /* modal fills the screen properly on a phone */
+  .overlay{padding:0;align-items:flex-end}
+  .modal{width:100%;max-height:92vh;border-radius:22px 22px 0 0;animation:sheetup .34s cubic-bezier(.2,.9,.3,1)}
+  @keyframes sheetup{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+  .m-close{width:42px;height:42px}
+  .m-btn{min-height:46px;flex:1;justify-content:center}
+
+  /* shortlist panel */
+  .sl-card{grid-template-columns:74px 1fr;gap:12px;padding:12px}
+  .sl-card img{width:74px;height:62px}
+  .sl-acts{grid-column:1/-1;gap:8px}
+  .sl-go,.sl-rm{flex:1;min-height:44px}
+
+  /* itinerary rows: more room for long stop names */
+  .it-stop{gap:10px}
+  .it-name{font-size:14.5px}
+  .it-n{font-size:12px;white-space:nowrap}
+
+  /* floating controls sized for thumbs, clear of each other */
+  .totop{left:var(--gutter);bottom:calc(var(--gutter) + env(safe-area-inset-bottom,0px));width:46px;height:46px}
+  .playchip{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+
+  /* stop hover-only affordances from sticking on touch */
+  .place:hover,.bh-v a:hover,.star:hover,.totop:hover{transform:none}
+}
+
+@media (max-width:420px){
+  :root{--gutter:16px}
+  .map-card{padding:30px 14px 18px}
+  .stats{gap:10px}
+  .stat b{font-size:1.05rem}
+  .modal{border-radius:18px 18px 0 0}
+}
+
+/* touch devices: no hover states, and a tap should act immediately */
+@media (hover:none){
+  .place:hover,.bh-v a:hover,.sl-go:hover,.cmp-live:hover,.lang-item:hover{background:inherit}
+  .rt-stop{r:3.8;opacity:.6}
+}
 </style>
 </head>
 <body>
@@ -3400,9 +3491,10 @@ document.addEventListener('click',e=>{
     const d=e.target.closest&&e.target.closest('.rt-stop');
     if(d) show(d); else if(hot&&!(e.target.closest&&e.target.closest('.map-tip'))) hide();
   });
+  const coarse=window.matchMedia&&window.matchMedia('(hover:none)').matches;
   document.addEventListener('pointerdown',e=>{
     const d=e.target.closest&&e.target.closest('.rt-stop');
-    if(d){ show(d); setTimeout(hide,2200); }
+    if(d&&!coarse){ show(d); setTimeout(hide,2200); }
   });
   window.addEventListener('scroll',hide,{passive:true});
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') hide(); });
