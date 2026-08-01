@@ -663,7 +663,8 @@ document.addEventListener('pointerdown',e=>{
   .rt-seg.drawn{stroke-dashoffset:0}
   .rt-stop{fill:var(--bg);stroke:var(--ink);stroke-width:.9;opacity:.2;
     transition:opacity .45s ease,r .18s ease,stroke-width .18s ease;cursor:pointer;pointer-events:all}
-  .rt-stop:hover,.rt-stop.hot{r:4.4;stroke-width:1.5;opacity:1}
+  .rt-stop:hover,.rt-stop.hot{r:4.6;stroke-width:1.6;opacity:1}
+  .rt-stop:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
   html[data-theme="dark"] .rt-stop:hover,html[data-theme="dark"] .rt-stop.hot{fill:#FFF4D6}
   .map-tip{position:absolute;z-index:6;pointer-events:none;
     transform:translate(-50%,-138%);opacity:0;transition:opacity .16s ease;
@@ -671,6 +672,7 @@ document.addEventListener('pointerdown',e=>{
     padding:5px 10px;border-radius:999px;white-space:nowrap;
     box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:200px;overflow:hidden;text-overflow:ellipsis}
   .map-tip.show{opacity:1}
+  .map-tip::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--bg);opacity:.55;margin-right:7px;vertical-align:middle}
   .map-tip::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:var(--ink)}
   .rt-stop.lit{opacity:.95}
@@ -3323,6 +3325,50 @@ function easeScrollTo(el, dur, done){
   })(t0);
 }
 
+
+
+/* clicking a route stop opens the destination panel for that place */
+function stopEnglishName(nameEl){
+  const rec = trNodes.find(o=>o.node && o.node.parentElement===nameEl);
+  return ((rec ? rec.en : nameEl.textContent) || '').trim();
+}
+function cardForStop(dot){
+  const sec=dot.closest('.entry'); if(!sec) return null;
+  const i=parseInt(dot.getAttribute('data-si'),10);
+  const nameEl=sec.querySelectorAll('.it-stop .it-name')[i];
+  if(!nameEl) return null;
+  const en=stopEnglishName(nameEl);
+  // strip "(fly)", "(shinkansen)" etc and take the leading place of a combined stop
+  const clean=en.replace(/\s*\([^)]*\)/g,'').split(/\s*[\/+·]\s*/)[0].replace(/\s+again$/i,'').trim();
+  const key=clean.toLowerCase();
+  const cards=[...sec.querySelectorAll('.place')];
+  let hit=cards.find(c=>(c.dataset.name||'').toLowerCase()===key)
+       || cards.find(c=>{const n=(c.dataset.name||'').toLowerCase();
+                         return n&&(n.includes(key)||key.includes(n));});
+  if(hit) return hit;
+  // no matching destination card — build a proxy so the panel still opens
+  let tmp=sec.querySelector('.stop-proxy');
+  if(!tmp){
+    tmp=document.createElement('button');
+    tmp.className='stop-proxy';
+    tmp.type='button';
+    tmp.style.cssText='position:absolute;width:0;height:0;padding:0;border:0;opacity:0;pointer-events:none';
+    sec.querySelector('.map-card').appendChild(tmp);
+  }
+  const country=sec.querySelector('.name').textContent.trim();
+  tmp.dataset.name=clean;
+  tmp.dataset.desc=nameEl.textContent.trim();
+  tmp.dataset.q=clean+', '+country;
+  tmp.dataset.wiki=clean;
+  return tmp;
+}
+document.addEventListener('click',e=>{
+  const dot=e.target.closest&&e.target.closest('.rt-stop');
+  if(!dot) return;
+  e.preventDefault();
+  const card=cardForStop(dot);
+  if(card) openModal(card);
+});
 
 /* hovering a route stop names the city — text taken live from the itinerary,
    so it stays correct in every language */
