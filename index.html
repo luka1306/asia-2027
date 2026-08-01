@@ -135,8 +135,8 @@
   .map-hero{margin-top:40px;background:var(--card);border:1px solid var(--hair);border-radius:var(--r);padding:18px 18px 8px;box-shadow:var(--shadow)}
   .globe-wrap{position:relative;width:100%;display:flex;justify-content:center}
   #globe{width:min(100%,560px);height:auto;aspect-ratio:1;display:block;cursor:grab;touch-action:none;overflow:visible;
-    transition:transform .75s cubic-bezier(.5,0,.75,0),opacity .55s ease .2s}
-  #globe.divein{transform:scale(1.55);opacity:0}
+    transition:transform .9s cubic-bezier(.45,0,.7,.2),opacity .8s cubic-bezier(.4,0,.9,.35)}
+  #globe.divein{transform:scale(1.38);opacity:0}
   #globe.dragging{cursor:grabbing}
   #worldmap{width:100%;height:auto;display:block}
   .wm-land{fill:var(--map-land)}
@@ -377,6 +377,29 @@ document.getElementById('sl-body').addEventListener('click',e=>{
   }
 });
 syncStars();
+
+
+/* eased programmatic scroll — duration-matched to the globe dive */
+function easeScrollTo(el, dur, done){
+  const startY=window.scrollY;
+  const endY=Math.max(0,Math.min(
+    el.getBoundingClientRect().top+window.scrollY,
+    Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)-window.innerHeight));
+  const dist=endY-startY;
+  if(Math.abs(dist)<2){ if(done) done(); return; }
+  const t0=performance.now();
+  let cancelled=false;
+  const stop=()=>{cancelled=true;};
+  window.addEventListener('wheel',stop,{passive:true,once:true});
+  window.addEventListener('touchstart',stop,{passive:true,once:true});
+  (function step(now){
+    if(cancelled){ if(done) done(); return; }
+    const k=Math.min(1,(now-t0)/dur);
+    const e=k<0.5 ? 4*k*k*k : 1-Math.pow(-2*k+2,3)/2;   // easeInOutCubic
+    window.scrollTo(0,startY+dist*e);
+    if(k<1) requestAnimationFrame(step); else if(done) done();
+  })(t0);
+}
 
 /* ripple on tap for the round/pill controls */
 document.addEventListener('pointerdown',e=>{
@@ -847,30 +870,23 @@ html[data-theme="dark"]{
   --neu-face:linear-gradient(145deg,#1f2622,#161b18);
   --neu-face-in:linear-gradient(145deg,#161b18,#1f2622);
 }
-.theme-btn,.lang-btn,.totop,.star,.sl-close,.starchip,.cmp-tr,.mb,.m-close{
+.totop,.star,.sl-close,.cmp-tr,.m-close{
   background:var(--neu-face);
   border:1px solid transparent;
   box-shadow:-4px -4px 10px var(--neu-lt), 5px 5px 12px var(--neu-dk);
 }
-.theme-btn:hover,.lang-btn:hover,.totop:hover,.star:hover,.sl-close:hover,
-.starchip:hover,.cmp-toggle:hover .cmp-tr,.mb:hover,.m-close:hover{
+.totop:hover,.star:hover,.sl-close:hover,
+.cmp-toggle:hover .cmp-tr,.m-close:hover{
   box-shadow:-5px -5px 13px var(--neu-lt), 7px 7px 16px var(--neu-dk);
 }
 /* pressed = inset, the defining neumorphic move */
-.theme-btn:active,.lang-btn:active,.totop:active,.star:active,.sl-close:active,
-.starchip:active,.mb:active,.m-close:active{
+.totop:active,.star:active,.sl-close:active,.m-close:active{
   background:var(--neu-face-in);
   box-shadow:inset 3px 3px 7px var(--neu-dk), inset -3px -3px 7px var(--neu-lt);
 }
-/* selected month sits pressed-in rather than filled */
-.mb.on{
-  background:var(--neu-face-in);
-  color:var(--ink);
-  box-shadow:inset 3px 3px 7px var(--neu-dk), inset -3px -3px 7px var(--neu-lt);
-}
-.mb.on::after{content:"";position:absolute;left:50%;bottom:5px;transform:translateX(-50%);
-  width:14px;height:2px;border-radius:2px;background:var(--green)}
-.mb{position:relative}
+
+
+
 /* starred = pressed in, tinted by the country accent */
 .star.on{
   background:var(--neu-face-in);
@@ -879,16 +895,11 @@ html[data-theme="dark"]{
   box-shadow:inset 3px 3px 8px var(--neu-dk), inset -3px -3px 8px var(--neu-lt);
 }
 .star.on:hover{color:var(--ac)}
-/* the month strip becomes a recessed tray holding the buttons */
-#monthbar{
-  background:var(--neu-face-in);
-  border-radius:999px;padding:7px;
-  box-shadow:inset 3px 3px 8px var(--neu-dk), inset -3px -3px 8px var(--neu-lt);
-}
-.langseg,.lang-menu{background:var(--neu-face)}
-.lang-menu{box-shadow:-5px -5px 14px var(--neu-lt), 8px 8px 20px var(--neu-dk)}
+
+
+
 @media (prefers-reduced-motion:reduce){
-  .theme-btn,.lang-btn,.totop,.star,.sl-close,.starchip,.mb,.m-close{transition:none}
+  .totop,.star,.sl-close,.m-close{transition:none}
 }
 </style>
 </head>
@@ -2970,7 +2981,7 @@ try{
   },{passive:true});
 
   // interaction
-  let dragging=false,moved=0,px=0,py=0,vx=0,vy=0;
+  let dragging=false,moved=0,px=0,py=0,vx=0,vy=0,diving=false;
   const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
   function pick(e){
     const b=canvas.getBoundingClientRect();
@@ -3005,16 +3016,22 @@ try{
         const el=document.getElementById(t.target);
         if(el){
           if(REDUCED||!globeGoTo){ el.scrollIntoView({behavior:'auto',block:'start'}); }
-          else {
-            // fly the globe to the country, then hand off to the page
+          else if(!diving){
+            diving=true;
+            // Phase 1 — turn the planet to face the country (no scaling yet)
             const cv=(COUNTRY_LL[t.target]||null);
-            if(cv) globeGoTo(cv[0],cv[1],2.25);
-            canvas.classList.add('divein');
+            if(cv) globeGoTo(cv[0],cv[1],2.45);
             setTimeout(()=>{
-              const go=()=>el.scrollIntoView({behavior:'smooth',block:'start'});
-              if(document.startViewTransition) document.startViewTransition(go); else go();
-              setTimeout(()=>{canvas.classList.remove('divein'); if(globeSetFilter) globeSetFilter(curFilter);},700);
-            },760);
+              // Phase 2 — dive and scroll as one continuous motion
+              canvas.classList.add('divein');
+              easeScrollTo(el, 900, ()=>{
+                // Phase 3 — restore the globe while it is off-screen, with no visible snap
+                canvas.style.transition='none';
+                canvas.classList.remove('divein');
+                if(globeSetFilter) globeSetFilter(curFilter);
+                requestAnimationFrame(()=>requestAnimationFrame(()=>{canvas.style.transition='';diving=false;}));
+              });
+            },600);
           }
         }
       }
@@ -3249,6 +3266,29 @@ document.getElementById('sl-body').addEventListener('click',e=>{
 syncStars();
 
 
+
+
+/* eased programmatic scroll — duration-matched to the globe dive */
+function easeScrollTo(el, dur, done){
+  const startY=window.scrollY;
+  const endY=Math.max(0,Math.min(
+    el.getBoundingClientRect().top+window.scrollY,
+    Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)-window.innerHeight));
+  const dist=endY-startY;
+  if(Math.abs(dist)<2){ if(done) done(); return; }
+  const t0=performance.now();
+  let cancelled=false;
+  const stop=()=>{cancelled=true;};
+  window.addEventListener('wheel',stop,{passive:true,once:true});
+  window.addEventListener('touchstart',stop,{passive:true,once:true});
+  (function step(now){
+    if(cancelled){ if(done) done(); return; }
+    const k=Math.min(1,(now-t0)/dur);
+    const e=k<0.5 ? 4*k*k*k : 1-Math.pow(-2*k+2,3)/2;   // easeInOutCubic
+    window.scrollTo(0,startY+dist*e);
+    if(k<1) requestAnimationFrame(step); else if(done) done();
+  })(t0);
+}
 
 /* ripple on tap for the round/pill controls */
 document.addEventListener('pointerdown',e=>{
