@@ -1960,6 +1960,113 @@ html[data-theme="dark"] .ai-panel::before{opacity:.55!important;filter:saturate(
   .ai-fab{bottom:calc(var(--fab-gap) + env(safe-area-inset-bottom,0px))}
   .slfab{bottom:calc(var(--fab-gap) + var(--fab) + 12px + env(safe-area-inset-bottom,0px))}
 }
+
+/* thicker spectrum border on the assistant window */
+.ai-panel::before{
+  inset:-2px!important;
+  padding:3px!important;
+  opacity:.62!important;
+  filter:saturate(.7) blur(.2px)!important;
+}
+html[data-theme="dark"] .ai-panel::before{opacity:.68!important;filter:saturate(.85) blur(.2px)!important}
+
+/* ===== even ring thickness at the corners =====
+   The mask-composite trick clips the inner mask to the content box but keeps
+   the outer radius, so the band pinches where the curve is tightest. Setting
+   the outer radius explicitly to (panel radius + inset) makes the two curves
+   concentric, and a slightly larger padding covers the residual difference. */
+.ai-panel::before{
+  border-radius:29px!important;      /* panel 26px + 2px inset, rounded up */
+  inset:-2px!important;
+  padding:3.4px!important;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0)!important;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0)!important;
+  -webkit-mask-composite:xor!important;
+  mask-composite:exclude!important;
+  -webkit-mask-clip:content-box,border-box!important;
+  mask-clip:content-box,border-box!important;
+}
+@media (max-width:640px){
+  .ai-panel::before{border-radius:25px!important;padding:3.2px!important}
+}
+
+/* assistant icon: a static compass, not a spinning sparkle */
+.ai-fab span{animation:none!important}
+.ai-ico{width:23px;height:23px;display:block;color:var(--bg);
+  transition:transform .5s cubic-bezier(.2,.9,.3,1)}
+.ai-fab:hover .ai-ico{transform:rotate(-18deg)}
+@media (max-width:640px){.ai-ico{width:21px;height:21px}}
+@media (prefers-reduced-motion:reduce){.ai-ico{transition:none}}
+
+/* compass: still at rest, needle sweeps while hovered */
+.ai-ico{width:27px;height:27px;display:block;color:var(--bg);overflow:visible}
+.ai-fab:hover .ai-ico{transform:none}
+.ai-needle{transform-origin:20px 20px;transform:rotate(0deg)}
+@keyframes needleSweep{
+  0%{transform:rotate(0deg)}
+  70%{transform:rotate(392deg)}
+  85%{transform:rotate(352deg)}
+  93%{transform:rotate(368deg)}
+  100%{transform:rotate(360deg)}
+}
+@media (hover:hover){
+  .ai-fab:hover .ai-needle{animation:needleSweep 1.5s cubic-bezier(.35,0,.2,1) infinite}
+  .ai-fab:hover .ai-bezel{opacity:.9;transition:opacity .3s ease}
+}
+.ai-fab:active .ai-needle{animation:needleSweep .9s cubic-bezier(.3,0,.2,1)}
+@media (max-width:640px){.ai-ico{width:25px;height:25px}}
+@media (prefers-reduced-motion:reduce){
+  .ai-fab:hover .ai-needle{animation:none}
+}
+
+/* ===== assistant open / close =====
+   Grows out of the button (bottom-right origin), settles with a slight
+   overshoot, and collapses back toward it on close. The contents fade in
+   just behind the panel so it does not feel like one flat block. */
+.ai-panel{transform-origin:calc(100% - 26px) calc(100% + 22px)}
+[dir="rtl"] .ai-panel{transform-origin:26px calc(100% + 22px)}
+
+@keyframes aiOpen{
+  0%{opacity:0;transform:scale(.72) translateY(18px)}
+  60%{opacity:1;transform:scale(1.02) translateY(-2px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}
+}
+@keyframes aiClose{
+  0%{opacity:1;transform:scale(1) translateY(0)}
+  100%{opacity:0;transform:scale(.8) translateY(12px)}
+}
+@keyframes aiFadeUp{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:none}
+}
+.ai-panel.open{animation:aiOpen .42s cubic-bezier(.22,1.1,.3,1) both}
+.ai-panel.open.closing{animation:aiClose .26s cubic-bezier(.4,0,.75,.2) both;pointer-events:none}
+
+/* interior settles a beat after the frame */
+.ai-panel.open:not(.closing) .ai-head{animation:aiFadeUp .34s ease .1s both}
+.ai-panel.open:not(.closing) .ai-log{animation:aiFadeUp .34s ease .16s both}
+.ai-panel.open:not(.closing) .ai-chips{animation:aiFadeUp .34s ease .21s both}
+.ai-panel.open:not(.closing) .ai-form{animation:aiFadeUp .34s ease .26s both}
+
+/* the button acknowledges the state */
+.ai-fab{transition:transform .34s cubic-bezier(.22,1.1,.3,1),box-shadow .3s ease}
+.ai-fab.is-open{transform:scale(.9)}
+.ai-fab.is-open .ai-needle{animation:needleSweep 1.5s cubic-bezier(.35,0,.2,1) 1}
+
+/* slightly smaller compass */
+.ai-ico{width:23px;height:23px}
+@media (max-width:640px){.ai-ico{width:21px;height:21px}}
+
+@media (prefers-reduced-motion:reduce){
+  .ai-panel.open,.ai-panel.open.closing,
+  .ai-panel.open:not(.closing) .ai-head,.ai-panel.open:not(.closing) .ai-log,
+  .ai-panel.open:not(.closing) .ai-chips,.ai-panel.open:not(.closing) .ai-form{animation:none}
+  .ai-fab.is-open{transform:none}
+}
 </style>
 </head>
 <body>
@@ -2171,7 +2278,7 @@ html[data-theme="dark"] .ai-panel::before{opacity:.55!important;filter:saturate(
 
 <nav class="rail" id="rail" aria-hidden="true"></nav>
 
-<button class="ai-fab" id="ai-fab" aria-label="Ask about these trips"><span>✦</span></button>
+<button class="ai-fab" id="ai-fab" aria-label="Ask about these trips"><svg class="ai-ico" viewBox="0 0 40 40" fill="none" aria-hidden="true"><g class="ai-bezel"><circle cx="20" cy="20" r="17.4" stroke="currentColor" stroke-width="1.7" opacity=".85"/><circle cx="20" cy="20" r="13.6" stroke="currentColor" stroke-width=".9" opacity=".35"/><path d="M20 2.2v4.2M20 33.6v4.2M37.8 20h-4.2M6.4 20H2.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M32.6 7.4l-2.4 2.4M9.8 30.2l-2.4 2.4M32.6 32.6l-2.4-2.4M9.8 9.8L7.4 7.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".55"/></g><g class="ai-needle"><path d="M20 8.6 24.4 20 20 17.9 15.6 20z" fill="currentColor"/><path d="M20 31.4 15.6 20 20 22.1 24.4 20z" fill="currentColor" opacity=".38"/></g><circle cx="20" cy="20" r="1.9" fill="currentColor"/><circle cx="20" cy="20" r="1.9" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
 <div class="ai-panel" id="ai-panel" aria-hidden="true"><span class="ai-lens" aria-hidden="true"></span>
   <div class="ai-head">
     <div><b data-ai="Ask about the trips">Ask about the trips</b><span data-ai="Answers come from this page's own research — no internet needed">Answers come from this page's own research — no internet needed</span></div>
@@ -5242,8 +5349,25 @@ tagSheen();
     add('q',q); input.value='';
     setTimeout(()=>add('a',answer(q)),160);
   });
-  function open(){ panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); seed(); setTimeout(()=>input.focus(),80); }
-  function close(){ panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); }
+  let closeTimer=null;
+  function open(){
+    clearTimeout(closeTimer);
+    panel.classList.remove('closing');
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden','false');
+    fab.classList.add('is-open');
+    seed();
+    setTimeout(()=>input.focus(),120);
+  }
+  function close(){
+    if(!panel.classList.contains('open')) return;
+    panel.classList.add('closing');
+    fab.classList.remove('is-open');
+    panel.setAttribute('aria-hidden','true');
+    closeTimer=setTimeout(()=>{
+      panel.classList.remove('open','closing');
+    },260);
+  }
   fab.addEventListener('click',()=>panel.classList.contains('open')?close():open());
   document.getElementById('ai-x').addEventListener('click',close);
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&panel.classList.contains('open')) close(); });
