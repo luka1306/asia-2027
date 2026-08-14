@@ -2444,6 +2444,293 @@ html[data-theme="dark"] .cmp-group{color:var(--sub)}
   .foldall-wrap{padding-left:var(--gutter);padding-right:var(--gutter);justify-content:center}
   .foldall{width:100%;justify-content:center;min-height:46px}
 }
+
+/* ============================================================
+   LAYOUT FIXES
+   1. horizontal overflow — the drifting orbs extend past the
+      viewport edge and widen the document
+   2. consistent left/right padding across every container
+   3. the progress rail redesigned to work with folded sections
+   ============================================================ */
+
+/* --- 1. nothing may widen the page --- */
+html,body{overflow-x:clip;max-width:100%}
+.orb{
+  /* keep them inside the viewport and stop the drift pushing them out */
+  right:auto!important;left:auto!important;
+  will-change:transform;
+}
+.orb-1{left:min(62vw,900px)!important;top:5%!important;
+  width:min(420px,50vw)!important;height:min(420px,50vw)!important}
+.orb-2{left:max(-6vw,-120px)!important;bottom:18%!important;
+  width:min(520px,60vw)!important;height:min(520px,60vw)!important}
+@keyframes orbdrift{
+  from{transform:translate3d(0,0,0) scale(1)}
+  to{transform:translate3d(-30px,26px,0) scale(1.05)}
+}
+
+/* --- 2. one padding rule for every container --- */
+:root{--pad:40px}
+@media (max-width:1400px){:root{--pad:32px}}
+@media (max-width:900px){:root{--pad:20px}}
+@media (max-width:420px){:root{--pad:16px}}
+.wrap,.grid,.cmp-in,.ghead-in,.foldall-wrap,.sl-panel,.dv-panel{
+  padding-left:var(--pad)!important;padding-right:var(--pad)!important;
+  max-width:var(--maxw);margin-left:auto;margin-right:auto;
+  box-sizing:border-box;
+}
+.bar-in{padding-left:var(--pad)!important;padding-right:var(--pad)!important;box-sizing:border-box}
+.ebar{padding-left:var(--pad);padding-right:var(--pad);box-sizing:border-box;
+  max-width:var(--maxw);margin:0 auto}
+.ebar:hover{padding-left:var(--pad);padding-right:var(--pad)}
+.entry.folded .ebar{border-radius:0}
+.efold{right:var(--pad)}
+[dir="rtl"] .efold{right:auto;left:var(--pad)}
+
+/* --- 3. the rail: a real index, aligned to the collapsed list --- */
+.rail{
+  left:max(10px,calc((100vw - var(--maxw))/2 - 26px));
+  gap:0;padding:10px 6px;border-radius:999px;
+  background:color-mix(in srgb,var(--card) 62%,transparent);
+  backdrop-filter:blur(14px) saturate(160%);
+  -webkit-backdrop-filter:blur(14px) saturate(160%);
+  border:1px solid var(--hair);
+  box-shadow:0 8px 30px -14px rgba(0,0,0,.28);
+}
+[dir="rtl"] .rail{left:auto;right:max(10px,calc((100vw - var(--maxw))/2 - 26px))}
+.rail a{
+  position:relative;width:22px;height:22px;border-radius:50%;
+  background:none!important;display:flex;align-items:center;justify-content:center;
+  transition:transform .22s var(--spring)}
+.rail a::before{
+  content:"";width:6px;height:6px;border-radius:50%;
+  background:var(--hair2);transition:all .22s ease}
+.rail a:hover{transform:none}
+.rail a:hover::before{background:var(--sub);width:8px;height:8px}
+.rail a.on::before{
+  background:var(--tk,var(--ink));width:9px;height:9px;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--tk,var(--ink)) 18%,transparent)}
+/* the country name appears on hover */
+.rail a::after{
+  content:attr(data-name);position:absolute;left:26px;white-space:nowrap;
+  font-size:11.5px;font-weight:700;color:var(--ink);
+  background:var(--card);border:1px solid var(--hair2);
+  padding:5px 10px;border-radius:999px;opacity:0;pointer-events:none;
+  transform:translateX(-4px);transition:opacity .18s ease,transform .18s ease;
+  box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.rail a:hover::after{opacity:1;transform:translateX(0)}
+[dir="rtl"] .rail a::after{left:auto;right:26px}
+@media (max-width:1180px){.rail{display:none}}
+
+/* ===== hero, quietened =====
+   It had accumulated an eyebrow, a two-part headline, a long paragraph, the
+   month strip, the best-in card and the globe — six competing elements. This
+   pulls the volume down: smaller headline, shorter measure, less colour, more
+   air, and the globe given room to be the focal point.
+   ============================================================ */
+.hero{padding:34px 0 38px}
+.eyebrow{opacity:.55;font-size:10px;letter-spacing:.26em;margin-bottom:18px}
+h1{
+  font-size:clamp(2.4rem,4.6vw,4rem)!important;
+  line-height:1.02;letter-spacing:-.038em;max-width:16ch;
+}
+h1 em{font-style:normal;display:block;color:var(--sub);font-weight:600;
+  font-size:.52em;letter-spacing:-.02em;margin-top:14px;line-height:1.2}
+.hero .sub{
+  font-size:.98rem;line-height:1.7;max-width:52ch;margin-top:18px;
+  color:var(--sub);
+}
+.hero .sub b{font-weight:600;color:var(--ink)}
+/* the best-in card is the loudest thing up here — make it a quiet strip */
+.besthis{
+  margin-top:26px;padding:14px 18px;border-radius:14px;
+  background:none;border:1px solid var(--hair);
+}
+.besthis::before{display:none}
+.bh-k{font-size:10px;letter-spacing:.22em;opacity:.6}
+.bh-m{font-size:1.15rem;font-style:normal;font-weight:700}
+.bh-v a{
+  padding:6px 12px;font-size:12.5px;font-weight:600;
+  border:1px solid var(--hair2);background:none;
+}
+.bh-v a:hover{border-color:var(--ac)}
+/* give the globe the space it deserves */
+.map-hero{margin-top:34px}
+#globe{width:min(100%,560px)}
+@media (max-width:900px){
+  .hero{padding:24px 0 26px}
+  h1{font-size:clamp(2.1rem,8.5vw,3rem)!important;max-width:none}
+  h1 em{font-size:.5em;margin-top:10px}
+  .hero .sub{font-size:.95rem;margin-top:14px}
+  .besthis{margin-top:20px;padding:12px 14px}
+  .map-hero{margin-top:24px}
+}
+
+/* ============================================================
+   MOBILE REBUILD — the bar was forcing brand + 12 months + 6
+   controls onto one row, which crushed the month labels and
+   pushed the sliding pill out of alignment. On narrow screens
+   it now becomes two rows: controls on top, months below.
+   ============================================================ */
+@media (max-width:820px){
+  .bar-in{
+    flex-wrap:wrap;row-gap:8px;padding-top:8px!important;padding-bottom:8px!important;
+    justify-content:space-between;
+  }
+  /* row 1: brand and the control cluster */
+  .brandwrap{order:1;flex:0 1 auto;min-width:0}
+  .bar-tools{order:2;flex:0 0 auto;margin-left:0;gap:6px}
+  /* row 2: the month strip, full width, scrollable */
+  #monthbar{
+    order:3;flex:1 0 100%;width:100%;
+    margin:0 calc(var(--pad)*-1);
+    padding:5px calc(var(--pad)) 5px;
+    border-radius:0;background:none;
+    overflow-x:auto;scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;
+  }
+  #monthbar::-webkit-scrollbar{display:none}
+  /* months get real width instead of being squeezed to 2 characters */
+  #monthbar .mb{
+    flex:0 0 auto;min-width:46px;padding:9px 12px;font-size:13px;
+    scroll-snap-align:center;
+  }
+  /* the sliding pill measures live, so it follows the wider buttons */
+  .mb-pill{top:5px;bottom:5px}
+
+  button.brand{font-size:13.5px;max-width:44vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .theme-btn{width:34px;height:34px;font-size:13px}
+  .vsbtn,.foldbtn{width:34px;height:34px}
+  .lang-btn{padding:7px 9px;font-size:10.5px}
+  .lang-btn svg{width:8px;height:8px}
+  #starword{display:none}
+  .fchip{font-size:10.5px;padding:5px 6px 5px 10px}
+}
+
+/* very narrow: shed what is not essential */
+@media (max-width:430px){
+  .bar-in{gap:6px}
+  button.brand{max-width:38vw;font-size:13px}
+  .theme-btn,.vsbtn,.foldbtn{width:32px;height:32px;font-size:12px}
+  .lang-btn{padding:6px 8px}
+  #monthbar .mb{min-width:42px;padding:8px 10px;font-size:12.5px}
+  /* the region chip duplicates the brand label — drop it */
+  .fchip{display:none!important}
+}
+
+/* the collapsed summary row needs to survive narrow widths too */
+@media (max-width:820px){
+  .ebar{gap:10px;padding-top:14px;padding-bottom:14px;flex-wrap:wrap}
+  .ebar-name{font-size:1.15rem;flex:1 1 auto;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ebar-tag{display:none}
+  .ebar-v{font-size:11px}
+  .ebar-cost{min-width:0;font-size:12.5px}
+  .ebar-chev{margin-left:auto}
+  .efold{top:10px;padding:5px 9px;font-size:9.5px}
+}
+
+/* comparison controls stack rather than overflow */
+@media (max-width:820px){
+  .cmp-ctrl{flex-direction:column;align-items:stretch;gap:14px}
+  .cmp-nights{display:flex;align-items:center;gap:12px;width:100%}
+  .cmp-nights input[type=range]{flex:1;min-width:0}
+  .cmp-pax{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .paxseg{flex:0 0 auto}
+  .cmp-note{font-size:11.5px;line-height:1.5}
+  table.cmp th,table.cmp td{padding:11px 10px}
+  .cmp-strip .cs{width:5px;height:3px}
+  .cs-now{height:6px}
+  .fare-btn{padding:8px 10px;font-size:11px}
+  .fare-alt{width:30px;height:30px;margin-left:4px}
+}
+
+/* deep-dive and shortlist panels */
+@media (max-width:820px){
+  .dv-panel,.sl-panel{padding-top:22px}
+  .dv-title{font-size:clamp(1.7rem,7vw,2.3rem)}
+  .dv-stats{grid-template-columns:repeat(2,1fr);gap:12px 16px}
+  .sl-vs{padding:9px 12px;font-size:11.5px}
+}
+
+/* ============================================================
+   MOBILE BAR — the month strip cannot share a row with five
+   controls on a 380px screen. Below 900px it moves to its own
+   line beneath them and scrolls horizontally.
+   ============================================================ */
+@media (max-width:900px){
+  .bar{top:6px;margin-top:6px;width:calc(100% - 12px);border-radius:20px}
+  .bar-in{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"brand tools" "months months";
+    gap:8px 10px;
+    padding-top:9px!important;padding-bottom:9px!important;
+    flex-wrap:nowrap;
+  }
+  .brandwrap{grid-area:brand;min-width:0}
+  .bar-tools{grid-area:tools;gap:5px}
+  #monthbar{
+    grid-area:months;width:100%;margin:0;
+    overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    scroll-snap-type:x proximity;
+    display:flex;flex-wrap:nowrap;justify-content:flex-start;
+    padding:3px;border-radius:999px;
+    background:color-mix(in srgb,var(--ink) 5%,transparent);
+  }
+  html[data-theme="dark"] #monthbar{background:rgba(255,255,255,.05)}
+  #monthbar::-webkit-scrollbar{display:none}
+  #monthbar .mb{
+    flex:0 0 auto;scroll-snap-align:center;
+    min-width:44px;padding:8px 10px;font-size:12.5px;
+  }
+  /* the sliding pill has to follow the scroll, so it lives in the same box */
+  .mb-pill{top:3px;bottom:3px}
+
+  /* brand: never let it squeeze the controls */
+  button.brand{font-size:13.5px;max-width:100%;overflow:hidden}
+  #brandlbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+  .brandwrap .dd{left:0;right:auto;min-width:min(78vw,260px)}
+
+  /* controls: uniform, tappable, no wrapping */
+  .bar-tools .theme-btn{width:36px;height:36px;font-size:13px;flex:0 0 auto}
+  .lang-btn{padding:8px 9px;font-size:11px;flex:0 0 auto}
+  .lang-btn svg{display:none}
+  #starchip{display:none!important}
+  .fchip{display:none}
+}
+@media (max-width:420px){
+  .bar{width:calc(100% - 10px);border-radius:18px}
+  .bar-in{gap:7px 8px;padding-left:14px!important;padding-right:14px!important}
+  .bar-tools{gap:4px}
+  .bar-tools .theme-btn{width:33px;height:33px;font-size:12px}
+  .lang-btn{padding:7px 8px;font-size:10.5px}
+  button.brand{font-size:12.5px}
+  #monthbar .mb{min-width:40px;padding:7px 8px;font-size:12px}
+}
+
+/* ---- the rest of the page on a phone ---- */
+@media (max-width:900px){
+  .hero{padding:20px 0 24px}
+  h1{font-size:clamp(2rem,8vw,2.7rem)!important}
+  .besthis{flex-direction:column;align-items:flex-start;gap:10px}
+  .bh-v{flex-wrap:wrap}
+  .entry{padding:44px 0}
+  .ebar{gap:10px;padding-top:15px;padding-bottom:15px}
+  .ebar-name{font-size:1.2rem}
+  .ebar-cost{min-width:60px;font-size:12px}
+  .efold{top:10px;padding:5px 9px;font-size:9.5px}
+  .foldall-wrap{padding-bottom:10px}
+  .map-card{padding:30px 14px 18px}
+  .cmp-ctrl{gap:14px}
+  .cmp-nights{width:100%}
+  .cmp-nights input[type=range]{flex:1}
+  table.cmp th,table.cmp td{padding:11px 10px;font-size:13px}
+  .cmp-strip .cs{width:5px;height:3px}
+  .hide-sm{display:none}
+  .sl-panel,.dv-panel{padding-top:22px}
+}
 </style>
 </head>
 <body>
@@ -2718,7 +3005,7 @@ html[data-theme="dark"] .cmp-group{color:var(--sub)}
 <header class="hero wrap">
   <div class="eyebrow">Luka's travel files · starting with spring 2027</div>
   <h1>Half the map, researched. <em>One empty seat.</em></h1>
-  <p class="sub">Weather, crowds, budgets and routes for every place worth going. Change the month and each one re-judges itself. Asia leads for <b>spring 2027</b>; the rest is scouted just as closely. </p>
+  <p class="sub">Weather, crowds, budgets and routes for every place worth going — change the month and each one re-judges itself. Asia leads for <b>spring 2027</b>. </p>
   <div class="besthis" id="besthis">
     <span class="bh-lab"><span class="bh-k" data-role="bh-kick"></span><span class="bh-m" data-role="bh-month"></span></span>
     <span class="bh-v" data-role="bh-list"></span>
@@ -4206,6 +4493,7 @@ function render(){
   renderBest();
   renderCmp();
   if(window.repaintFolded) window.repaintFolded();
+  if(window.paintRail) window.paintRail();
   if(window.syncFoldAll) window.syncFoldAll();
   const live=document.getElementById('sr-live');
   if(live){ const n=CMP.filter(c=>c.score[month]===2).map(c=>TR(c.name));
@@ -6036,6 +6324,22 @@ tagSheen();
   bar.addEventListener('click',sync);
   window.syncFoldAll=sync;
   sync();
+})();
+
+
+/* rail: label each tick, and keep it correct when the language changes */
+(function railLabels(){
+  const rail=document.getElementById('rail');
+  if(!rail) return;
+  function paint(){
+    [...rail.querySelectorAll('a')].forEach(a=>{
+      const id=(a.getAttribute('href')||'').replace('#','');
+      const c=CMP.find(x=>x.id===id);
+      if(c) a.setAttribute('data-name',TR(c.name));
+    });
+  }
+  window.paintRail=paint;
+  paint();
 })();
 
 /* leg labels become badges on the connector line */
