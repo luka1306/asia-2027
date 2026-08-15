@@ -2931,6 +2931,65 @@ html{
 @media (max-height:640px){
   html{scroll-snap-type:none}
 }
+
+/* ================= SPECULAR EDGES + DIRECTIONAL SHEEN =================
+   Applied to the map cards and season strips. These sit ON the page rather
+   than over moving content, so a true backdrop-filter would have nothing to
+   refract — it would read as the grey smudge the technique is meant to avoid,
+   and it would erase the per-country accent tint. What genuinely translates is
+   the specular edge and the raking light, so that is what is used here.
+   ====================================================================== */
+.map-card,.season{
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:18px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,.55),
+    inset 0 0 0 1px color-mix(in srgb,var(--ink) 4%,transparent),
+    0 8px 32px -18px rgba(0,0,0,.25);
+}
+html[data-theme="dark"] .map-card,
+html[data-theme="dark"] .season{
+  border-color:rgba(255,255,255,.10);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,.09),
+    inset 0 0 0 1px rgba(255,255,255,.04),
+    0 10px 34px -18px rgba(0,0,0,.6);
+}
+/* the raking reflection — folded into the existing vignette layer, since both
+   pseudo-elements on .map-card are already carrying grain and vignette */
+.map-card::before{
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.30),rgba(255,255,255,0) 46%),
+    radial-gradient(120% 100% at 50% 40%,transparent 55%,
+      color-mix(in srgb,var(--ink) 5%,transparent))!important;
+}
+html[data-theme="dark"] .map-card::before{
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.10),rgba(255,255,255,0) 46%),
+    radial-gradient(120% 100% at 50% 40%,transparent 52%,rgba(0,0,0,.30))!important;
+}
+/* the season strip gets its own sheen */
+.season{position:relative;isolation:isolate}
+.season::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:linear-gradient(120deg,rgba(255,255,255,.26),rgba(255,255,255,0) 44%);
+}
+html[data-theme="dark"] .season::after{
+  background:linear-gradient(120deg,rgba(255,255,255,.08),rgba(255,255,255,0) 44%);
+}
+.season > *{position:relative;z-index:1}
+
+/* saturation boost where glass genuinely sits over moving content */
+.bar{backdrop-filter:blur(20px) saturate(185%)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(185%)!important}
+.ai-panel{backdrop-filter:blur(40px) saturate(230%)!important;
+  -webkit-backdrop-filter:blur(40px) saturate(230%)!important}
+
+/* forced-colors fallback: keep a visible edge when transparency is disabled */
+@media (forced-colors:active){
+  .map-card,.season,.bar,.ai-panel,.dd{border:1px solid CanvasText}
+  .map-card::before,.season::after{display:none}
+}
 </style>
 </head>
 <body>
